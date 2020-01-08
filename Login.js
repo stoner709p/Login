@@ -26,6 +26,10 @@ function newUser() {
         }
 
         rl.question("What do you want your password to be?", (answer) => {
+            if(answer.length > 10){
+                console.log("Please make the password less than 10 characters!");
+                return start()
+            }
             let today = new Date();
             logins[username.toLowerCase()] = {
                 password: answer,
