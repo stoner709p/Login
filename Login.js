@@ -1,7 +1,8 @@
 // Require needed packages and jsons.
 const fs = require("fs");
 const readline = require('readline');
-const NodeRSA = require('node-rsa')
+const cryptr = require('cryptr')
+const uniqueString = require('unique-string');
 let logins = require("./Logins.json");
 // Setup readline as "rl"
 const rl = readline.createInterface({
@@ -60,7 +61,8 @@ function newUser() {
 			// Add the user to the logins array
 			logins[username.toLowerCase()] = {
 				password: answer,
-				lastLogin: `${today.getMonth() + 1}/${today.getDate()}/${today.getFullYear()}-${today.getHours()}:${today.getMinutes()}`
+				lastLogin: `${today.getMonth() + 1}/${today.getDate()}/${today.getFullYear()}-${today.getHours()}:${today.getMinutes()}`,
+				key: "null"
 			};
 			// Tell the user that their login has been created
 			console.log(`Created user(Username: ${username}, Password: ${answer})`);
@@ -128,32 +130,45 @@ function login(username) {
 function system(username) {
     let key;
     if(logins[username.toLowerCase()].key !== "null"){
-    	key = new NodeRSA(logins[username.toLowerCase()].key);
-    	 key.importKey(key, "pkcs1")
+    	key = logins[username.toLowerCase()].key
 	} else {
-    	key = new NodeRSA(null, 'pkcs1')
+    	key = uniqueString();
 	}
 	if(key !== logins[username.toLowerCase()].key){
         logins[username.toLowerCase()].key = key
 	}
+    fs.writeFile("./Logins.json", JSON.stringify(logins, 0, 2), err => {
+        if (err) throw err
+    });
 	rl.question('Do you want to encrypt or decrypt?', (answer) => {
 		if(answer.toLowerCase() === "encrypt"){
 			encrypt(key, username);
 		}
 		if(answer.toLowerCase() === "decrypt"){
-			decrypt(key)
+			decrypt(key, username)
 		}
 	})
 
 }
 function encrypt(key, username) {
     rl.question('What do you want to encrypt?', (text) => {
-        const key = new NodeRSA({b: 512});
-        text = 'Hello RSA!';
-        const encrypted = key.encrypt(text, 'base64');
-        console.log('encrypted: ', encrypted);
-		fs.writeFile(`./${username}:Encrypted.txt`, encrypted, err =>{
-			if(err) throw err
+    	rl.question('What should your key be? ', (keyInput) => {
+            const key = new cryptr(keyInput);
+            const encrypted = key.encrypt(text);
+            console.log('Encrypted: ', encrypted);
+            console.log('Selected Key:', keyInput)
+            return system(username)
+		})
+
+    })
+}
+function decrypt(key, username) {
+    rl.question('What do you want to decrypt?', (text) => {
+    	rl.question('What is your key?', (keyInput) =>{
+            const key = new cryptr(keyInput);
+            const Decrypted = key.decrypt(text);
+            console.log('Decrypted: ', Decrypted);
+            return system(username)
 		})
     })
 }
