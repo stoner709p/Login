@@ -1,0 +1,9 @@
+{
+  "name": "Login and Encryption",
+  "version": "1.2.0",
+  "dependencies": {
+    "cryptr": "latest",
+    "fs": "latest",
+    "readline": "latest"
+  }
+}
